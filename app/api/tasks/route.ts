@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectToDatabase } from "@/lib/mongodb"
+import { connectToDatabase } from "@/lib/mongoose"
+import TaskModel from "@/lib/models/task"
 
 export async function GET(request: NextRequest) {
   try {
-    const { db } = await connectToDatabase()
-    const tasks = await db.collection("tasks").find({}).sort({ createdAt: -1 }).toArray()
+    await connectToDatabase()
+    const tasks = await TaskModel.find().sort({ createdAt: -1 })
 
     return NextResponse.json(tasks)
   } catch (error) {
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
     const taskData = await request.json()
 
     // Validate required fields
@@ -23,16 +24,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const newTask = {
+    const newTask = new TaskModel({
       ...taskData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+      deadline: new Date(taskData.deadline),
+    })
 
-    const result = await db.collection("tasks").insertOne(newTask)
-    const createdTask = await db.collection("tasks").findOne({ _id: result.insertedId })
+    const savedTask = await newTask.save()
 
-    return NextResponse.json(createdTask)
+    return NextResponse.json(savedTask)
   } catch (error) {
     console.error("Database Error:", error)
     return NextResponse.json({ error: "Failed to create task" }, { status: 500 })

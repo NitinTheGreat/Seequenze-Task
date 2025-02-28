@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Search, Plus, Filter } from "lucide-react"
 import TaskList from "@/components/task-list"
@@ -25,22 +25,22 @@ export default function Home() {
   const [priorityFilter, setPriorityFilter] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        setLoading(true)
-        const data = await fetchTasks()
-        setTasks(data)
-        setFilteredTasks(data)
-      } catch (error) {
-        console.error("Failed to fetch tasks:", error)
-      } finally {
-        setLoading(false)
-      }
+  const loadTasks = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await fetchTasks()
+      setTasks(data)
+      setFilteredTasks(data)
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error)
+    } finally {
+      setLoading(false)
     }
-
-    loadTasks()
   }, [])
+
+  useEffect(() => {
+    loadTasks()
+  }, [loadTasks])
 
   useEffect(() => {
     let result = tasks
@@ -63,8 +63,12 @@ export default function Home() {
   }, [searchQuery, priorityFilter, tasks])
 
   const handleTaskAdded = (newTask: Task) => {
-    setTasks((prev) => [...prev, newTask])
+    loadTasks()
     setIsAddingTask(false)
+  }
+
+  const handleTaskUpdated = () => {
+    loadTasks()
   }
 
   const expiredTasks = filteredTasks.filter((task) => {
@@ -129,14 +133,25 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <TaskList title="To Do" color="blue" tasks={filteredTasks.filter((task) => task.status === "todo")} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <TaskList
+            title="To Do"
+            color="blue"
+            tasks={filteredTasks.filter((task) => task.status === "todo")}
+            onTaskUpdated={handleTaskUpdated}
+          />
           <TaskList
             title="On Progress"
             color="orange"
             tasks={filteredTasks.filter((task) => task.status === "in-progress")}
+            onTaskUpdated={handleTaskUpdated}
           />
-          <TaskList title="Done" color="green" tasks={filteredTasks.filter((task) => task.status === "done")} />
+          <TaskList
+            title="Done"
+            color="green"
+            tasks={filteredTasks.filter((task) => task.status === "done")}
+            onTaskUpdated={handleTaskUpdated}
+          />
         </div>
 
         {isAddingTask ? (

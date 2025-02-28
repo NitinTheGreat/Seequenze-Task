@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectToDatabase } from "@/lib/mongodb"
+import { connectToDatabase } from "@/lib/mongoose"
+import TaskModel from "../../../../lib/task"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
 
-    const task = await db.collection("tasks").findOne({ _id: id })
+    const task = await TaskModel.findById(id)
 
     if (!task) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 })
@@ -22,21 +23,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
     const taskData = await request.json()
 
-    const updatedTask = {
-      ...taskData,
-      updatedAt: new Date().toISOString(),
+    if (taskData.deadline) {
+      taskData.deadline = new Date(taskData.deadline)
     }
 
-    const result = await db.collection("tasks").updateOne({ _id: id }, { $set: updatedTask })
+    const task = await TaskModel.findByIdAndUpdate(id, taskData, { new: true })
 
-    if (result.matchedCount === 0) {
+    if (!task) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 })
     }
-
-    const task = await db.collection("tasks").findOne({ _id: id })
 
     return NextResponse.json(task)
   } catch (error) {
@@ -48,11 +46,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
 
-    const result = await db.collection("tasks").deleteOne({ _id: id })
+    const result = await TaskModel.findByIdAndDelete(id)
 
-    if (result.deletedCount === 0) {
+    if (!result) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 })
     }
 

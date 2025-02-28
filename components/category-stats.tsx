@@ -12,13 +12,26 @@ export default function CategoryStats({ category }: CategoryStatsProps) {
   const getIcon = () => {
     switch (category.id) {
       case "expired":
-        return <Clock className="h-6 w-6 text-red-500" />
+        return <Clock className="h-6 w-6 text-white" />
       case "active":
-        return <FileText className="h-6 w-6 text-blue-500" />
+        return <FileText className="h-6 w-6 text-white" />
       case "completed":
-        return <CheckCircle className="h-6 w-6 text-green-500" />
+        return <CheckCircle className="h-6 w-6 text-white" />
       default:
         return null
+    }
+  }
+
+  const getBgColor = () => {
+    switch (category.id) {
+      case "expired":
+        return "bg-red-500"
+      case "active":
+        return "bg-orange-500"
+      case "completed":
+        return "bg-blue-500"
+      default:
+        return "bg-gray-500"
     }
   }
 
@@ -30,7 +43,7 @@ export default function CategoryStats({ category }: CategoryStatsProps) {
       className="bg-white rounded-lg p-4 shadow-sm"
     >
       <div className="flex flex-col h-full">
-        <div className="p-2 rounded-full bg-gray-100 w-fit mb-4">{getIcon()}</div>
+        <div className={`p-2 rounded-full ${getBgColor()} w-fit mb-4`}>{getIcon()}</div>
         <h3 className="text-sm text-gray-500 mb-1">{category.name}</h3>
         <div className="flex items-baseline">
           <span className="text-3xl font-bold">{category.count}</span>

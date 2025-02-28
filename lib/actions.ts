@@ -1,13 +1,14 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { connectToDatabase } from "@/lib/mongodb"
-import type { Task, CreateTaskInput } from "@/lib/types"
+import { connectToDatabase } from "@/lib/mongoose"
+import TaskModel, { type ITask } from "../lib/task"
+import type { CreateTaskInput } from "@/lib/types"
 
-export async function fetchTasks(): Promise<Task[]> {
+export async function fetchTasks(): Promise<ITask[]> {
   try {
-    const { db } = await connectToDatabase()
-    const tasks = await db.collection("tasks").find({}).sort({ createdAt: -1 }).toArray()
+    await connectToDatabase()
+    const tasks = await TaskModel.find().sort({ createdAt: -1 })
 
     return JSON.parse(JSON.stringify(tasks))
   } catch (error) {
@@ -16,10 +17,10 @@ export async function fetchTasks(): Promise<Task[]> {
   }
 }
 
-export async function fetchTaskById(id: string): Promise<Task> {
+export async function fetchTaskById(id: string): Promise<ITask> {
   try {
-    const { db } = await connectToDatabase()
-    const task = await db.collection("tasks").findOne({ _id: id })
+    await connectToDatabase()
+    const task = await TaskModel.findById(id)
 
     if (!task) {
       throw new Error("Task not found")
@@ -32,48 +33,42 @@ export async function fetchTaskById(id: string): Promise<Task> {
   }
 }
 
-export async function createTask(taskData: CreateTaskInput): Promise<Task> {
+export async function createTask(taskData: CreateTaskInput): Promise<ITask> {
   try {
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
 
-    const newTask = {
+    const newTask = new TaskModel({
       ...taskData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+      deadline: new Date(taskData.deadline),
+    })
 
-    const result = await db.collection("tasks").insertOne(newTask)
-
-    if (!result.insertedId) {
-      throw new Error("Failed to create task")
-    }
-
-    const createdTask = await db.collection("tasks").findOne({ _id: result.insertedId })
+    const savedTask = await newTask.save()
 
     revalidatePath("/")
-    return JSON.parse(JSON.stringify(createdTask))
+    return JSON.parse(JSON.stringify(savedTask))
   } catch (error) {
     console.error("Database Error:", error)
     throw new Error("Failed to create task")
   }
 }
 
-export async function updateTask(id: string, taskData: Partial<CreateTaskInput>): Promise<Task> {
+export async function updateTask(id: string, taskData: Partial<CreateTaskInput>): Promise<ITask> {
   try {
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
 
     const updatedTask = {
       ...taskData,
-      updatedAt: new Date().toISOString(),
     }
 
-    const result = await db.collection("tasks").updateOne({ _id: id }, { $set: updatedTask })
+    if (taskData.deadline) {
+      updatedTask.deadline = new Date(taskData.deadline).toISOString()
+    }
 
-    if (result.matchedCount === 0) {
+    const task = await TaskModel.findByIdAndUpdate(id, updatedTask, { new: true })
+
+    if (!task) {
       throw new Error("Task not found")
     }
-
-    const task = await db.collection("tasks").findOne({ _id: id })
 
     revalidatePath("/")
     return JSON.parse(JSON.stringify(task))
@@ -83,17 +78,31 @@ export async function updateTask(id: string, taskData: Partial<CreateTaskInput>)
   }
 }
 
-export async function updateTaskStatus(id: string, status: string): Promise<Task> {
-  return updateTask(id, { status })
+export async function updateTaskStatus(id: string, status: string): Promise<ITask> {
+  try {
+    await connectToDatabase()
+
+    const task = await TaskModel.findByIdAndUpdate(id, { status }, { new: true })
+
+    if (!task) {
+      throw new Error("Task not found")
+    }
+
+    revalidatePath("/")
+    return JSON.parse(JSON.stringify(task))
+  } catch (error) {
+    console.error("Database Error:", error)
+    throw new Error("Failed to update task status")
+  }
 }
 
 export async function deleteTask(id: string): Promise<boolean> {
   try {
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
 
-    const result = await db.collection("tasks").deleteOne({ _id: id })
+    const result = await TaskModel.findByIdAndDelete(id)
 
-    if (result.deletedCount === 0) {
+    if (!result) {
       throw new Error("Task not found")
     }
 

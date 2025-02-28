@@ -8,9 +8,10 @@ interface TaskListProps {
   title: string
   color: string
   tasks: Task[]
+  onTaskUpdated: () => void
 }
 
-export default function TaskList({ title, color, tasks }: TaskListProps) {
+export default function TaskList({ title, color, tasks, onTaskUpdated }: TaskListProps) {
   const getColorClasses = () => {
     switch (color) {
       case "blue":
@@ -42,20 +43,20 @@ export default function TaskList({ title, color, tasks }: TaskListProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-lg p-4 shadow-sm"
+      className="bg-gray-100 rounded-lg p-4"
     >
       <div className="flex items-center gap-2 mb-4">
         <div className={`w-2 h-2 rounded-full ${getBgColorClasses()}`}></div>
         <h2 className={`text-sm font-medium ${getColorClasses()}`}>{title}</h2>
-        <span className="ml-1 text-xs bg-gray-100 px-2 py-0.5 rounded-full">{tasks.length}</span>
+        <span className="ml-1 text-xs bg-gray-200 px-2 py-0.5 rounded-full">{tasks.length}</span>
       </div>
 
       <div className={`w-full h-1 ${getBgColorClasses()} mb-4 rounded-full`}></div>
 
       {tasks.length > 0 ? (
-        <div className="space-y-4">
+        <div>
           {tasks.map((task) => (
-            <TaskItem key={task._id} task={task} />
+            <TaskItem key={task._id} task={task} onTaskUpdated={onTaskUpdated} />
           ))}
         </div>
       ) : (
