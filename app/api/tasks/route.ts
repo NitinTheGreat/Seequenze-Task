@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectToDatabase } from "@/lib/mongoose"
-import TaskModel from "@/lib/models/task"
+import TaskModel from "../../../lib/task"
 
 export async function GET(request: NextRequest) {
   try {
