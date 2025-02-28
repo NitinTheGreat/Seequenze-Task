@@ -13,7 +13,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Task, Category } from "@/lib/types"
+import type { Task, Category, ITask } from "@/lib/types"
 import { fetchTasks } from "@/lib/actions"
 import CategoryStats from "@/components/category-stats"
 
@@ -28,7 +28,10 @@ export default function Home() {
   const loadTasks = useCallback(async () => {
     try {
       setLoading(true)
-      const data = await fetchTasks()
+      const data: Task[] = (await fetchTasks()).map((task: ITask) => ({
+        ...task,
+        _id: task._id as string,
+      }))
       setTasks(data)
       setFilteredTasks(data)
     } catch (error) {

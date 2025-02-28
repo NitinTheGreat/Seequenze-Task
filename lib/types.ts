@@ -9,7 +9,28 @@ export interface Task {
   createdAt: string
   updatedAt: string
 }
-
+// export interface ITask {
+//   _id: string;
+//   title: string;
+//   description: string;
+//   priority: "low" | "high";
+//   status: "todo" | "in-progress" | "done";
+//   deadline: string;
+//   assignedTo?: string;
+//   createdAt: string;
+//   updatedAt: string;
+// }
+export interface ITask {
+  _id: string;
+  title: string;
+  description: string;
+  priority: "low" | "high";
+  status: "todo" | "in-progress" | "done";
+  deadline: string;
+  assignedTo?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 export interface Category {
   id: string
   name: string
